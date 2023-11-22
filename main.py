@@ -8,6 +8,8 @@ from utils import draw_landmarks_on_image
 model_path = "model/hand_landmarker.task"
 # model from https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/index#models
 
+# MediaPipe Hand Landmarker guide: https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/python
+
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
@@ -21,7 +23,7 @@ detector = HandLandmarker.create_from_options(options)
 
 test_img = mp.Image.create_from_file("test/test.jpg")
 
-out = detector.detect(test_img)
+out = detector.detect(test_img) # detect_for_video
 # print(out.hand_landmarks)
 
 annotated_image = draw_landmarks_on_image(test_img.numpy_view(), out)
