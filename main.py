@@ -13,10 +13,9 @@ HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-# Create a hand landmarker instance with the video mode:
 options = HandLandmarkerOptions(
     base_options=BaseOptions(model_asset_path='model/hand_landmarker.task'),
-    running_mode=VisionRunningMode.IMAGE) # change to VIDEO
+    running_mode=VisionRunningMode.IMAGE) # change to VIDEO, add video processing later
 
 detector = HandLandmarker.create_from_options(options)
 
@@ -27,3 +26,4 @@ out = detector.detect(test_img)
 
 annotated_image = draw_landmarks_on_image(test_img.numpy_view(), out)
 cv2.imshow("test", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+cv2.waitKey(0)
