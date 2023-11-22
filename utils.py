@@ -3,6 +3,8 @@ from mediapipe.framework.formats import landmark_pb2
 import numpy as np
 import cv2
 
+## VISUALIZATION CODE FROM https://colab.research.google.com/github/googlesamples/mediapipe/blob/main/examples/hand_landmarker/python/hand_landmarker.ipynb
+
 MARGIN = 10  # pixels
 FONT_SIZE = 1
 FONT_THICKNESS = 1
