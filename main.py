@@ -4,6 +4,7 @@ import cv2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from utils import draw_landmarks_on_image
+from PIL import Image
 
 model_path = "model/hand_landmarker.task"
 # model from https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/index#models
@@ -22,9 +23,6 @@ options = HandLandmarkerOptions(
 detector = HandLandmarker.create_from_options(options)
 
 test_img = mp.Image.create_from_file("test/test.jpg")
-
-out = detector.detect(test_img) # detect_for_video
-# print(out.hand_landmarks)
 
 annotated_image = draw_landmarks_on_image(test_img.numpy_view(), out)
 cv2.imshow("test", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
