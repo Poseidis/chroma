@@ -44,9 +44,11 @@ class LiveHands():
                 if len(result.hand_world_landmarks) > 0:
                     rad, angle, circ = utils.getRadTheta(result, output_image.height, output_image.width)
                     norm_angle = angle/np.pi # normalize so the output is [0, 1]
-                    norm_rad = rad/1200 # normalize using 1200 value as the upper radius. experimentally determined 
+                    norm_rad = rad/650 # normalize using 1200 value as the upper radius. experimentally determined 
+                    if norm_rad > 1: norm_rad = 1
                     # print("norm_rad: ", norm_rad)
                     # print("angle_rad: ", norm_angle)
+                    
 
                     # color
                     # Red = 255, 0, 0
@@ -55,19 +57,36 @@ class LiveHands():
                     # Cyan = 0, 255, 255
                     # Blue = 0, 0, 255
                     # Magenta = 255, 0, 255
-                    scaled_angle = norm_angle*255/6
+
+                    # Brightness = norm_rad*each field
+                    # print(scaled_angle)
+                    # if 0 <= norm_angle <= 1/6:
+                    #     test_color = (0, norm_rad*norm_angle*1530, norm_rad*255)
+                    # elif 1/6 < norm_angle <= 1/3:
+                    #     test_color = (0, 255 - (norm_rad*(norm_angle - 1/6)*1530), norm_rad*255)
+                    # elif 1/3 < norm_angle <= 1/2:
+                    #     test_color = (norm_rad*(norm_angle - 1/3)*1530, norm_rad*255, 0)
+                    # elif 1/2 < norm_angle <= 2/3:
+                    #     test_color = (norm_rad*255, 255 - (norm_rad*(norm_angle - 0.5)*1530), 0)
+                    # elif 2/3 < norm_angle <= 5/6:
+                    #     test_color = (norm_rad*255, 0, norm_rad*(norm_angle - 2/3)*1530)
+                    # elif 5/6 < norm_angle <= 1:
+                    #     test_color = (255 - (norm_rad*(norm_angle - 5/6)*1530), 0, norm_rad*255)
+                    # else:
+                    #     test_color = (0, 0, 0)
+
                     if 0 <= norm_angle <= 1/6:
-                        test_color = (norm_rad*255, norm_rad*scaled_angle, 0)
+                        test_color = (norm_rad*255, norm_rad*norm_angle*1530, 0)
                     elif 1/6 < norm_angle <= 1/3:
-                        test_color = ((255 - scaled_angle)*norm_rad, norm_rad*255, 0)
+                        test_color = (norm_rad*(255 - (norm_angle - 1/6)*1530), norm_rad*255, 0)
                     elif 1/3 < norm_angle <= 1/2:
-                        test_color = (0, norm_rad*255, norm_rad*scaled_angle)
+                        test_color = (0, norm_rad*255, norm_rad*(norm_angle - 1/3)*1530)
                     elif 1/2 < norm_angle <= 2/3:
-                        test_color = (0, (255 - scaled_angle)*norm_rad, norm_rad*255)
+                        test_color = (0, norm_rad*(255 - (norm_angle - 0.5)*1530), norm_rad*255)
                     elif 2/3 < norm_angle <= 5/6:
-                        test_color = (norm_rad*scaled_angle, 0, norm_rad*255)
+                        test_color = (norm_rad*(norm_angle - 2/3)*1530, 0, norm_rad*255)
                     elif 5/6 < norm_angle <= 1:
-                        test_color = (norm_rad*255, 0, (255 - scaled_angle)*norm_rad)
+                        test_color = (norm_rad*255, 0, norm_rad*(255 - (norm_angle - 5/6)*1530))
                     else:
                         test_color = (0, 0, 0)
 
