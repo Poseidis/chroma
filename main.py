@@ -58,33 +58,22 @@ class LiveHands():
                     # Blue = 0, 0, 255
                     # Magenta = 255, 0, 255
 
-                    # Brightness = norm_rad*each field
-                    # print(scaled_angle)
-                    # if 0 <= norm_angle <= 1/6:
-                    #     test_color = (0, norm_rad*norm_angle*1530, norm_rad*255)
-                    # elif 1/6 < norm_angle <= 1/3:
-                    #     test_color = (0, 255 - (norm_rad*(norm_angle - 1/6)*1530), norm_rad*255)
-                    # elif 1/3 < norm_angle <= 1/2:
-                    #     test_color = (norm_rad*(norm_angle - 1/3)*1530, norm_rad*255, 0)
-                    # elif 1/2 < norm_angle <= 2/3:
-                    #     test_color = (norm_rad*255, 255 - (norm_rad*(norm_angle - 0.5)*1530), 0)
-                    # elif 2/3 < norm_angle <= 5/6:
-                    #     test_color = (norm_rad*255, 0, norm_rad*(norm_angle - 2/3)*1530)
-                    # elif 5/6 < norm_angle <= 1:
-                    #     test_color = (255 - (norm_rad*(norm_angle - 5/6)*1530), 0, norm_rad*255)
-                    # else:
-                    #     test_color = (0, 0, 0)
-
+                    # Between Red and Yellow, R stays at 255 * norm_rad, G INCREASES from 0 to 255 * norm_rad
                     if 0 <= norm_angle <= 1/6:
                         test_color = (norm_rad*255, norm_rad*norm_angle*1530, 0)
+                    # Between Yellow and Green, G stays at 255 * norm_rad, R DECREASEs from 255 * norm_rad to 0
                     elif 1/6 < norm_angle <= 1/3:
                         test_color = (norm_rad*(255 - (norm_angle - 1/6)*1530), norm_rad*255, 0)
+                    # Between Green and Cyan, G stays at 255 * norm_rad, B INCREASES from 0 to 255 * norm_rad
                     elif 1/3 < norm_angle <= 1/2:
                         test_color = (0, norm_rad*255, norm_rad*(norm_angle - 1/3)*1530)
+                    # Between Cyan and Blue, B stays at 255 * norm_rad, G DECREASES from 255 * norm_rad to 0
                     elif 1/2 < norm_angle <= 2/3:
                         test_color = (0, norm_rad*(255 - (norm_angle - 0.5)*1530), norm_rad*255)
+                    # Between Blue and Magenta, B stays at 255 * norm_rad, R INCREASES from 0 to 255 * norm_rad
                     elif 2/3 < norm_angle <= 5/6:
                         test_color = (norm_rad*(norm_angle - 2/3)*1530, 0, norm_rad*255)
+                    # Between Magenta and Red, R stays at 255 * norm_rad, B DECREASES from 255 * norm_rad to 0
                     elif 5/6 < norm_angle <= 1:
                         test_color = (norm_rad*255, 0, norm_rad*(255 - (norm_angle - 5/6)*1530))
                     else:
