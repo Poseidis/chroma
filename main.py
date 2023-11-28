@@ -5,9 +5,15 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import utils
 from PIL import Image
+import math
 
-model_path = "model/hand_landmarker.task"
 # model from https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/index#models
+MODEL_PATH = "model/hand_landmarker.task"
+
+RING_PINKY_THRESH = 0.1 # threshold for ring and pinky finger distance to wrist/MCPs to be considered touching
+RADIUS_NORMALIZATION = 650 # radius of circle to normalize to. experimentally determined
+COLOR_QUANTIZATION = 18 # number of colors to quantize the color wheel into
+BRIGHTNESS_QUANTIZATION = 10 # number of brightness levels to quantize the brightness into
 
 # MediaPipe Hand Landmarker guide: https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/python
 
@@ -23,65 +29,53 @@ VisionRunningMode = mp.tasks.vision.RunningMode
 class LiveHands():
     def __init__(self):
         self.annotated_frame = np.zeros((640,480,3), np.uint8)
+        self.circle_frame = np.zeros((640,480,3), np.uint8)
         self.hand_res = None
-        options = HandLandmarkerOptions(base_options=BaseOptions(model_asset_path='model/hand_landmarker.task'),
+        options = HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=MODEL_PATH),
                                         running_mode=VisionRunningMode.LIVE_STREAM,
                                         num_hands=1,
-                                        min_hand_detection_confidence=0.3,
-                                        min_hand_presence_confidence=0.3,
+                                        min_hand_detection_confidence=0.2,
+                                        min_hand_presence_confidence=0.2,
                                         min_tracking_confidence=0.3,
                                         result_callback=self.results_cb)
     
         self.detector = HandLandmarker.create_from_options(options)
 
     def results_cb(self, result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
-        annotated_frame = utils.draw_landmarks_on_image(output_image.numpy_view(), result)
-        # self.hand_res = result
+        # draw the landmarks on the image
+        annotated_frame = output_image.numpy_view()
+        annotated_frame = utils.draw_landmarks_on_image(annotated_frame, result)
 
         # brightness/color
         try:
             if result is not None:
                 if len(result.hand_world_landmarks) > 0:
-                    rad, angle, circ = utils.getRadTheta(result, output_image.height, output_image.width)
-                    norm_angle = angle/np.pi # normalize so the output is [0, 1]
-                    norm_rad = rad/650 # normalize using 1200 value as the upper radius. experimentally determined 
-                    if norm_rad > 1: norm_rad = 1
-                    # print("norm_rad: ", norm_rad)
-                    # print("angle_rad: ", norm_angle)
-                    
+                    d4, d5 = utils.getDistanceRingPinkyWrist(result)
+                    if (d4 + d5)/2 < RING_PINKY_THRESH:
+                        # print(result.hand_world_landmarks)
+                        rad, angle, circle = utils.getRadTheta(result, output_image.height, output_image.width)
 
-                    # color
-                    # Red = 255, 0, 0
-                    # Yellow = 255, 255, 0
-                    # Green = 0, 255, 0
-                    # Cyan = 0, 255, 255
-                    # Blue = 0, 0, 255
-                    # Magenta = 255, 0, 255
+                        # normalize so the output is [0, 1], quantized
+                        norm_angle = round(angle/np.pi*COLOR_QUANTIZATION)/COLOR_QUANTIZATION
 
-                    # Between Red and Yellow, R stays at 255 * norm_rad, G INCREASES from 0 to 255 * norm_rad
-                    if 0 <= norm_angle <= 1/6:
-                        test_color = (norm_rad*255, norm_rad*norm_angle*1530, 0)
-                    # Between Yellow and Green, G stays at 255 * norm_rad, R DECREASEs from 255 * norm_rad to 0
-                    elif 1/6 < norm_angle <= 1/3:
-                        test_color = (norm_rad*(255 - (norm_angle - 1/6)*1530), norm_rad*255, 0)
-                    # Between Green and Cyan, G stays at 255 * norm_rad, B INCREASES from 0 to 255 * norm_rad
-                    elif 1/3 < norm_angle <= 1/2:
-                        test_color = (0, norm_rad*255, norm_rad*(norm_angle - 1/3)*1530)
-                    # Between Cyan and Blue, B stays at 255 * norm_rad, G DECREASES from 255 * norm_rad to 0
-                    elif 1/2 < norm_angle <= 2/3:
-                        test_color = (0, norm_rad*(255 - (norm_angle - 0.5)*1530), norm_rad*255)
-                    # Between Blue and Magenta, B stays at 255 * norm_rad, R INCREASES from 0 to 255 * norm_rad
-                    elif 2/3 < norm_angle <= 5/6:
-                        test_color = (norm_rad*(norm_angle - 2/3)*1530, 0, norm_rad*255)
-                    # Between Magenta and Red, R stays at 255 * norm_rad, B DECREASES from 255 * norm_rad to 0
-                    elif 5/6 < norm_angle <= 1:
-                        test_color = (norm_rad*255, 0, norm_rad*(255 - (norm_angle - 5/6)*1530))
-                    else:
-                        test_color = (0, 0, 0)
+                        # normalize using 1200 value as the upper radius quantized
+                        norm_rad = round(rad/RADIUS_NORMALIZATION*BRIGHTNESS_QUANTIZATION)/BRIGHTNESS_QUANTIZATION
+                        if norm_rad > 1: norm_rad = 1
 
-                    print(test_color)
-                    cv2.circle(annotated_frame, (circ[1], circ[2]), int(circ[0]), test_color, 9)
-            
+                        # print("norm_rad: ", norm_rad)
+                        # print("angle_rad: ", norm_angle)
+
+                        # color = utils.getRGBFromAngleBrightness(norm_angle, norm_rad)
+                        color = utils.getRGBFromAngle(norm_angle)
+
+                        # show circle in center of new window
+                        circle_frame = np.zeros((output_image.height, output_image.width, 3), np.uint8)
+
+
+                        # cv2.circle(annotated_frame, (circle[1], circle[2]), int(circle[0]*norm_rad), color, -1)
+                        cv2.circle(circle_frame, (output_image.width//2, output_image.height//2), int(output_image.height*.85*norm_rad), color, -1)
+
+                        self.circle_frame = circle_frame
             self.annotated_frame = annotated_frame
         except Exception as e:
             print(e)
@@ -104,7 +98,8 @@ class LiveHands():
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
             self.detector.detect_async(mp_image, frame_timestamp_ms)
 
-            cv2.imshow("test", self.annotated_frame) # cv2.cvtColor(self.annotated_frame, cv2.COLOR_RGB2BGR)
+            cv2.imshow("camera", self.annotated_frame) # cv2.cvtColor(self.annotated_frame, cv2.COLOR_RGB2BGR)
+            cv2.imshow("circle", self.circle_frame)
             # END
 
         cap.release()

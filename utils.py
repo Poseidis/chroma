@@ -121,3 +121,80 @@ def getRadTheta(results, height, width):
         result_rad = r/wrist_dist
     
     return result_rad, result_angle, (r, h, k)
+
+def getDistanceRingPinkyWrist(results):
+    for landmark in results.hand_landmarks:
+        #extract finger tip landmarks
+        ring = landmark[mp.solutions.hands.HandLandmark.RING_FINGER_TIP]
+        pinky = landmark[mp.solutions.hands.HandLandmark.PINKY_TIP]
+        wrist = landmark[mp.solutions.hands.HandLandmark.WRIST]
+        # ring_mcp = landmark[mp.solutions.hands.HandLandmark.RING_FINGER_MCP]
+        # pinky_mcp = landmark[mp.solutions.hands.HandLandmark.PINKY_MCP]
+
+        # return math.dist([ring.x, ring.y], [ring_mcp.x, ring_mcp.y]), math.dist([pinky.x, pinky.y], [pinky_mcp.x, pinky_mcp.y])
+        return math.dist([ring.x, ring.y], [wrist.x, wrist.y]), math.dist([wrist.x, wrist.y], [pinky.x, pinky.y])
+
+    
+def getRGBFromAngleBrightness(norm_angle, norm_rad):
+    # color
+    # Red = 255, 0, 0
+    # Yellow = 255, 255, 0
+    # Green = 0, 255, 0
+    # Cyan = 0, 255, 255
+    # Blue = 0, 0, 255
+    # Magenta = 255, 0, 255
+
+    # Between Red and Yellow, R stays at 255 * norm_rad, G INCREASES from 0 to 255 * norm_rad
+    if 0 <= norm_angle <= 1/6:
+        test_color = (norm_rad*255, norm_rad*norm_angle*1530, 0)
+    # Between Yellow and Green, G stays at 255 * norm_rad, R DECREASEs from 255 * norm_rad to 0
+    elif 1/6 < norm_angle <= 1/3:
+        test_color = (norm_rad*(255 - (norm_angle - 1/6)*1530), norm_rad*255, 0)
+    # Between Green and Cyan, G stays at 255 * norm_rad, B INCREASES from 0 to 255 * norm_rad
+    elif 1/3 < norm_angle <= 1/2:
+        test_color = (0, norm_rad*255, norm_rad*(norm_angle - 1/3)*1530)
+    # Between Cyan and Blue, B stays at 255 * norm_rad, G DECREASES from 255 * norm_rad to 0
+    elif 1/2 < norm_angle <= 2/3:
+        test_color = (0, norm_rad*(255 - (norm_angle - 0.5)*1530), norm_rad*255)
+    # Between Blue and Magenta, B stays at 255 * norm_rad, R INCREASES from 0 to 255 * norm_rad
+    elif 2/3 < norm_angle <= 5/6:
+        test_color = (norm_rad*(norm_angle - 2/3)*1530, 0, norm_rad*255)
+    # Between Magenta and Red, R stays at 255 * norm_rad, B DECREASES from 255 * norm_rad to 0
+    elif 5/6 < norm_angle <= 1:
+        test_color = (norm_rad*255, 0, norm_rad*(255 - (norm_angle - 5/6)*1530))
+    else:
+        test_color = (0, 0, 0)
+    
+    return test_color
+
+def getRGBFromAngle(norm_angle):
+    # color
+    # Red = 255, 0, 0
+    # Yellow = 255, 255, 0
+    # Green = 0, 255, 0
+    # Cyan = 0, 255, 255
+    # Blue = 0, 0, 255
+    # Magenta = 255, 0, 255
+
+    # Between Red and Yellow, R stays at 255 * norm_rad, G INCREASES from 0 to 255 * norm_rad
+    if 0 <= norm_angle <= 1/6:
+        test_color = (255, norm_angle*1530, 0)
+    # Between Yellow and Green, G stays at 255 * norm_rad, R DECREASEs from 255 * norm_rad to 0
+    elif 1/6 < norm_angle <= 1/3:
+        test_color = (255 - (norm_angle - 1/6)*1530, 255, 0)
+    # Between Green and Cyan, G stays at 255 * norm_rad, B INCREASES from 0 to 255 * norm_rad
+    elif 1/3 < norm_angle <= 1/2:
+        test_color = (0, 255, (norm_angle - 1/3)*1530)
+    # Between Cyan and Blue, B stays at 255 * norm_rad, G DECREASES from 255 * norm_rad to 0
+    elif 1/2 < norm_angle <= 2/3:
+        test_color = (0, 255 - (norm_angle - 0.5)*1530, 255)
+    # Between Blue and Magenta, B stays at 255 * norm_rad, R INCREASES from 0 to 255 * norm_rad
+    elif 2/3 < norm_angle <= 5/6:
+        test_color = ((norm_angle - 2/3)*1530, 0, 255)
+    # Between Magenta and Red, R stays at 255 * norm_rad, B DECREASES from 255 * norm_rad to 0
+    elif 5/6 < norm_angle <= 1:
+        test_color = (255, 0, 255 - (norm_angle - 5/6)*1530)
+    else:
+        test_color = (0, 0, 0)
+    
+    return test_color
