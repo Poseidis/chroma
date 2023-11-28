@@ -10,8 +10,9 @@ import math
 # model from https://developers.google.com/mediapipe/solutions/vision/hand_landmarker/index#models
 MODEL_PATH = "model/hand_landmarker.task"
 
-RING_PINKY_THRESH = 0.1 # threshold for ring and pinky finger distance to wrist/MCPs to be considered touching
-RADIUS_NORMALIZATION = 650 # radius of circle to normalize to. experimentally determined
+RING_PINKY_THRESH = 0.14 # threshold for ring and pinky finger distance to wrist/MCPs to be considered touching
+RADIUS_NORMALIZATION = .1 # radius of circle to normalize to. experimentally determined
+# 650, 1200
 COLOR_QUANTIZATION = 18 # number of colors to quantize the color wheel into
 BRIGHTNESS_QUANTIZATION = 10 # number of brightness levels to quantize the brightness into
 
@@ -53,7 +54,8 @@ class LiveHands():
                     d4, d5 = utils.getDistanceRingPinkyWrist(result)
                     if (d4 + d5)/2 < RING_PINKY_THRESH:
                         # print(result.hand_world_landmarks)
-                        rad, angle, circle = utils.getRadTheta(result, output_image.height, output_image.width)
+                        # rad, angle, circle = utils.getRadThetaProjection(result, output_image.height, output_image.width)
+                        rad, angle, center = utils.getRadThetaWorld(result)
 
                         # normalize so the output is [0, 1], quantized
                         norm_angle = round(angle/np.pi*COLOR_QUANTIZATION)/COLOR_QUANTIZATION
@@ -73,8 +75,13 @@ class LiveHands():
 
 
                         # cv2.circle(annotated_frame, (circle[1], circle[2]), int(circle[0]*norm_rad), color, -1)
-                        cv2.circle(circle_frame, (output_image.width//2, output_image.height//2), int(output_image.height*.85*norm_rad), color, -1)
-
+                        # circle in 3d, need to project to 2d
+                        
+                        # cv2.circle(annotated_frame, (center[0], center[1]), int(rad), color, -1)
+                        cv2.circle(circle_frame, (output_image.width//2, output_image.height//2), int(output_image.height*.4*norm_rad), color, -1)
+                        cv2.putText(annotated_frame, "radius: " + str(rad), (80,80), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+                        cv2.putText(annotated_frame, "angle: " + str(angle), (80,160), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+                        cv2.putText(annotated_frame, "z: " + str(center[2]), (80,240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
                         self.circle_frame = circle_frame
             self.annotated_frame = annotated_frame
         except Exception as e:

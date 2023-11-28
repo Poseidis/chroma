@@ -93,8 +93,20 @@ def findCircle(x1, y1, x2, y2, x3, y3) :
 
     return r, h, k 
 
+def find_circle_3d(A, B, C):
+    a = np.linalg.norm(C - B)
+    b = np.linalg.norm(C - A)
+    c = np.linalg.norm(B - A)
+    s = (a + b + c) / 2
+    R = a * b * c / 4 / np.sqrt(s * (s - a) * (s - b) * (s - c))
+    b1 = a*a * (b*b + c*c - a*a)
+    b2 = b*b * (a*a + c*c - b*b)
+    b3 = c*c * (a*a + b*b - c*c)
+    O = np.column_stack((A, B, C)).dot(np.hstack((b1, b2, b3)))/ (b1 + b2 + b3)
+    return R, O
 
-def getRadTheta(results, height, width):
+
+def getRadThetaProjection(results, height, width):
     for landmark in results.hand_landmarks:
         #extract finger tip landmarks
         thum_coords = landmark[mp.solutions.hands.HandLandmark.THUMB_TIP]
@@ -103,8 +115,8 @@ def getRadTheta(results, height, width):
 
         #calculate the slope of the line formed by the thumb and middle finger
         thumb_middle_slope = (thum_coords.y-middle_coords.y) / (thum_coords.x - middle_coords.x)        
-        angle = np.arctan(thumb_middle_slope)
-        result_angle = angle + np.pi/2
+        result_angle = np.arctan(thumb_middle_slope) + np.pi/2
+
         denorm_thumb_coords = (int(thum_coords.x*width), int(thum_coords.y*height))
         denorm_middle_coords = (int(middle_coords.x*width), int(middle_coords.y*height))
         denorm_index_coords = (int(index_coords.x*width), int(index_coords.y*height))
@@ -121,6 +133,22 @@ def getRadTheta(results, height, width):
         result_rad = r/wrist_dist
     
     return result_rad, result_angle, (r, h, k)
+
+def getRadThetaWorld(results):
+    for landmark in results.hand_world_landmarks:
+        #extract finger tip landmarks
+        thum_coords = landmark[mp.solutions.hands.HandLandmark.THUMB_TIP]
+        index_coords = landmark[mp.solutions.hands.HandLandmark.INDEX_FINGER_TIP]
+        middle_coords = landmark[mp.solutions.hands.HandLandmark.MIDDLE_FINGER_TIP]
+
+        # calculate angle of thumb-middle relative to x-axis
+        thumb_middle = np.array([thum_coords.x - middle_coords.x, thum_coords.y - middle_coords.y, thum_coords.z - middle_coords.z])
+        result_angle = np.arctan2(thumb_middle[1], thumb_middle[0])
+
+        # calculate radius of circle formed by thumb, index, and middle
+        r, o = find_circle_3d(np.array([thum_coords.x, thum_coords.y, thum_coords.z]), np.array([index_coords.x, index_coords.y, index_coords.z]), np.array([middle_coords.x, middle_coords.y, middle_coords.z]))
+        
+    return r, result_angle, o
 
 def getDistanceRingPinkyWrist(results):
     for landmark in results.hand_landmarks:
