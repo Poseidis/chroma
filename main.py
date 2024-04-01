@@ -35,9 +35,9 @@ class LiveHands():
         options = HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=MODEL_PATH),
                                         running_mode=VisionRunningMode.LIVE_STREAM,
                                         num_hands=1,
-                                        min_hand_detection_confidence=0.2,
+                                        min_hand_detection_confidence=0.4,
                                         min_hand_presence_confidence=0.2,
-                                        min_tracking_confidence=0.3,
+                                        min_tracking_confidence=0.2,
                                         result_callback=self.results_cb)
     
         self.detector = HandLandmarker.create_from_options(options)
@@ -88,7 +88,9 @@ class LiveHands():
             print(e)
             pass
 
-    def run(self):
+    def run(self):        
+        frame_count = 0 #running frame count for non-monotonically increasing time stamp error
+
         cap = cv2.VideoCapture(0)
         while cap.isOpened():
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -100,13 +102,23 @@ class LiveHands():
                 break
 
             # height, width = frame.shape[:2]
-            frame_timestamp_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC))
+            # frame_timestamp_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC))
+            # print(frame_timestamp_ms)
 
+            #FOR NON MONOTONICALLY INCREASING TIMESTAMP ERROR
+            frame_timestamp_ms = 0 #initialize the time to 0 each frame
+            fps = cap.get(cv2.CAP_PROP_FPS) #pull the FPS
+            frame_count += 1 #incremement the running frame count
+            frame_timestamp_ms = int(float(frame_count)/fps * 1000) #calculate the timestamp
+            
+            print(frame_timestamp_ms)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+        
+            # print(frame_timestamp_ms, prev_timestamp)
             self.detector.detect_async(mp_image, frame_timestamp_ms)
-
             cv2.imshow("camera", self.annotated_frame) # cv2.cvtColor(self.annotated_frame, cv2.COLOR_RGB2BGR)
             cv2.imshow("circle", self.circle_frame)
+            # prev_timestamp = frame_timestamp_ms
             # END
 
         cap.release()
