@@ -144,6 +144,8 @@ def getRadThetaWorld(results):
         # calculate angle of thumb-middle relative to x-axis
         thumb_middle = np.array([thum_coords.x - middle_coords.x, thum_coords.y - middle_coords.y, thum_coords.z - middle_coords.z])
         result_angle = np.arctan2(thumb_middle[1], thumb_middle[0])
+        if result_angle < 0:
+            result_angle += np.pi
 
         # calculate radius of circle formed by thumb, index, and middle
         r, o = find_circle_3d(np.array([thum_coords.x, thum_coords.y, thum_coords.z]), np.array([index_coords.x, index_coords.y, index_coords.z]), np.array([middle_coords.x, middle_coords.y, middle_coords.z]))
@@ -151,7 +153,7 @@ def getRadThetaWorld(results):
     return r, result_angle, o
 
 def getDistanceRingPinkyWrist(results):
-    for landmark in results.hand_landmarks:
+    for landmark in results.hand_world_landmarks:
         #extract finger tip landmarks
         ring = landmark[mp.solutions.hands.HandLandmark.RING_FINGER_TIP]
         pinky = landmark[mp.solutions.hands.HandLandmark.PINKY_TIP]
@@ -160,7 +162,7 @@ def getDistanceRingPinkyWrist(results):
         # pinky_mcp = landmark[mp.solutions.hands.HandLandmark.PINKY_MCP]
 
         # return math.dist([ring.x, ring.y], [ring_mcp.x, ring_mcp.y]), math.dist([pinky.x, pinky.y], [pinky_mcp.x, pinky_mcp.y])
-        return math.dist([ring.x, ring.y], [wrist.x, wrist.y]), math.dist([wrist.x, wrist.y], [pinky.x, pinky.y])
+        return math.dist([ring.x, ring.y, ring.z], [wrist.x, wrist.y, wrist.z]), math.dist([wrist.x, wrist.y, wrist.z], [pinky.x, pinky.y, pinky.z])
 
     
 def getRGBFromAngleBrightness(norm_angle, norm_rad):
